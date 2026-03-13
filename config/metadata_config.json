@@ -1,0 +1,18 @@
+{
+  "file_type": "delimited_text",
+  "delimiter": "\t",
+  "expected_columns": [
+    {"name": "hit_time_gmt", "type": "int"},
+    {"name": "date_time", "type": "datetime"},
+    {"name": "user_agent", "type": "text"},
+    {"name": "ip", "type": "string"},
+    {"name": "geo_city", "type": "string"},
+    {"name": "geo_country", "type": "string"},
+    {"name": "geo_region", "type": "string"},
+    {"name": "pagename", "type": "string"},
+    {"name": "page_url", "type": "string"},
+    {"name": "product_list", "type": "text"},
+    {"name": "referrer", "type": "string"},
+    {"name": "event_list", "type": "text"}
+  ]
+}
