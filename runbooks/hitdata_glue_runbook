@@ -1,0 +1,129 @@
+AWS Glue Data Processing Pipeline Runbook
+1. Overview
+This runbook describes the operation, maintenance, and troubleshooting of the AWS Glue pipeline that processes hit-level web analytics data.
+
+The pipeline:
+• Reads raw hit-level data files from Amazon S3
+• Validates schema and profiles metadata
+• Performs business transformation to calculate revenue from search engines
+• Writes processed output and logs back to S3
+
+Primary goal:
+Determine revenue generated from external search engines (Google, Yahoo, MSN/Bing) and identify the best-performing keywords.
+2. Architecture Summary
+Components:
+• Amazon S3 – raw input data, processed output, logs, metadata
+• AWS Glue – Spark-based ETL processing engine
+• Python Glue Job – main pipeline logic
+• Metadata Profiler – schema validation and profiling module
+
+High Level Flow:
+S3 Raw Data → AWS Glue Job → Metadata Profiling → Business Transformation → S3 Processed Output + Logs
+3. S3 Folder Structure
+analytics-hitdata-s3/
+│
+├── raw/
+│   └── YYYY/MM/DD/HH-MM-SS/input_file.tab
+│
+├── processed/
+│   └── YYYY/MM/DD/HH-MM-SS/output_file.tab
+│
+├── metadata/
+│   └── metadata logs
+│
+├── logs/
+│   └── pipeline logs and run summaries
+│
+└── checksums/
+    └── checksum files used to detect duplicate processing
+4. Glue Job Execution
+Runtime Argument:
+--input_key raw/YYYY/MM/DD/HH-MM-SS/input_file.tab
+
+Example Run:
+aws glue start-job-run --job-name search-keyword-revenue-pipeline --arguments '{"--input_key":"raw/2026/03/12/12-00-00/input_file.tab"}'
+5. Pipeline Steps
+Step 1 – Compute checksum
+The pipeline calculates SHA256 checksum of the input file.
+
+Step 2 – Skip unchanged files
+If checksum exists in the checksums folder, the pipeline skips processing.
+
+Step 3 – Read input file
+Input file is read from S3 as tab-delimited text.
+
+Step 4 – Metadata profiling
+Schema validation and column statistics are computed.
+
+Step 5 – Business transformation
+Search engine referrers and keywords are extracted.
+Purchases are detected using event_list.
+Revenue is extracted from product_list.
+
+Step 6 – Revenue attribution
+Revenue is attributed to the most recent search engine interaction.
+
+Step 7 – Aggregation
+Revenue grouped by:
+• Search Engine Domain
+• Search Keyword
+
+Step 8 – Write output
+Results written to processed folder.
+
+Step 9 – Write logs
+Metadata logs, run summaries, and pipeline logs saved to S3.
+6. Metadata Profiling
+The MetadataProfiler validates:
+• Missing columns
+• Extra columns
+• Column count mismatch
+
+For each column it records:
+• Min value
+• Max value
+• Null count
+• Distinct count
+7. Business Logic
+Purchase Event Detection:
+event_list contains event code '1'.
+
+Revenue Extraction:
+product_list format:
+category;product;quantity;revenue
+
+Search Engine Detection:
+Based on referrer domain:
+• google.*
+• yahoo.*
+• bing.* / msn.*
+8. Output Format
+Output File:
+SearchKeywordPerformance.tab
+
+Columns:
+Search Engine Domain
+Search Keyword
+Revenue
+9. Monitoring
+Monitor via:
+• AWS Glue job logs
+• CloudWatch logs
+• S3 pipeline logs
+
+Key metrics:
+• records_processed
+• output_rows
+• processing time
+10. Troubleshooting
+Issue: Job fails at startup
+Check Glue worker configuration.
+
+Issue: Missing columns
+Verify metadata_config.json.
+
+Issue: No revenue output
+Check event_list and product_list parsing.
+
+Issue: File skipped
+Checksum already exists in checksums folder.
